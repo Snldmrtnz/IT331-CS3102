@@ -14,7 +14,6 @@ class MyCVApp extends StatelessWidget {
   }
 }
 
-// Login Screen
 class LoginScreen extends StatelessWidget {
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
@@ -66,7 +65,7 @@ class LoginScreen extends StatelessWidget {
   }
 }
 
-// CV Screen
+
 class MyCVScreen extends StatefulWidget {
   @override
   _MyCVScreenState createState() => _MyCVScreenState();
