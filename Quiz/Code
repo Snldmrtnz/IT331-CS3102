@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
-import 'dart:io';
 
 void main() => runApp(MyCVApp());
 
@@ -9,20 +7,54 @@ class MyCVApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: LoginScreen(),
+      home: AuthScreen(),
     );
   }
 }
 
-class LoginScreen extends StatelessWidget {
-  final TextEditingController emailController = TextEditingController();
-  final TextEditingController passwordController = TextEditingController();
+class AuthScreen extends StatefulWidget {
+  @override
+  _AuthScreenState createState() => _AuthScreenState();
+}
+
+class _AuthScreenState extends State<AuthScreen> {
+  bool _isSignedIn = false;
+  String _userName = '';
+
+  void _signIn(String userName) {
+    setState(() {
+      _isSignedIn = true;
+      _userName = userName;
+    });
+  }
+
+  void _signOut() {
+    setState(() {
+      _isSignedIn = false;
+      _userName = '';
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return _isSignedIn
+        ? MyCVScreen(_userName, _signOut)
+        : SignInScreen(_signIn);
+  }
+}
+
+class SignInScreen extends StatelessWidget {
+  final Function(String) signIn;
+  SignInScreen(this.signIn);
+
+  final TextEditingController _controller = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("Login"),
+        title: Text('Sign In'),
+        backgroundColor: Colors.blue,
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -30,33 +62,30 @@ class LoginScreen extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             TextField(
-              controller: emailController,
+              controller: _controller,
               decoration: InputDecoration(
-                labelText: "Email",
+                labelText: 'Enter Username',
                 border: OutlineInputBorder(),
               ),
             ),
-            SizedBox(height: 16),
-            TextField(
-              controller: passwordController,
-              obscureText: true,
-              decoration: InputDecoration(
-                labelText: "Password",
-                border: OutlineInputBorder(),
-              ),
-            ),
-            SizedBox(height: 16),
+            SizedBox(height: 20),
             ElevatedButton(
               onPressed: () {
-                if (emailController.text.isNotEmpty &&
-                    passwordController.text.isNotEmpty) {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => MyCVScreen()),
-                  );
+                String username = _controller.text;
+                if (username.isNotEmpty) {
+                  signIn(username);
                 }
               },
-              child: Text("Login"),
+              child: Text('Sign In'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => SignUpScreen()),
+                );
+              },
+              child: Text('Don’t have an account? Sign Up'),
             ),
           ],
         ),
@@ -65,34 +94,62 @@ class LoginScreen extends StatelessWidget {
   }
 }
 
-
-class MyCVScreen extends StatefulWidget {
+class SignUpScreen extends StatefulWidget {
   @override
-  _MyCVScreenState createState() => _MyCVScreenState();
+  _SignUpScreenState createState() => _SignUpScreenState();
 }
 
-class _MyCVScreenState extends State<MyCVScreen> {
-  File? _profileImage;
-
-  Future<void> _pickImage() async {
-    final ImagePicker picker = ImagePicker();
-    final XFile? image = await picker.pickImage(source: ImageSource.gallery);
-
-    if (image != null) {
-      setState(() {
-        _profileImage = File(image.path);
-      });
-    }
-  }
+class _SignUpScreenState extends State<SignUpScreen> {
+  final TextEditingController _controller = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          "My CV",
-          style: TextStyle(color: Colors.white),
+        title: Text('Sign Up'),
+        backgroundColor: Colors.blue,
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            TextField(
+              controller: _controller,
+              decoration: InputDecoration(
+                labelText: 'Enter Username',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: () {
+                String username = _controller.text;
+                if (username.isNotEmpty) {
+                  Navigator.pop(
+                      context, username); // Return to sign-in with username
+                }
+              },
+              child: Text('Sign Up'),
+            ),
+          ],
         ),
+      ),
+    );
+  }
+}
+
+class MyCVScreen extends StatelessWidget {
+  final String userName;
+  final Function signOut;
+
+  MyCVScreen(this.userName, this.signOut);
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text("My CV"),
         backgroundColor: Colors.blue,
         leading: Builder(
           builder: (context) => IconButton(
@@ -100,6 +157,18 @@ class _MyCVScreenState extends State<MyCVScreen> {
             onPressed: () => Scaffold.of(context).openDrawer(),
           ),
         ),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.exit_to_app),
+            onPressed: () {
+              signOut();
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (context) => AuthScreen()),
+              );
+            },
+          ),
+        ],
       ),
       drawer: Drawer(
         child: ListView(
@@ -120,22 +189,34 @@ class _MyCVScreenState extends State<MyCVScreen> {
             ListTile(
               leading: Icon(Icons.circle, size: 18, color: Colors.grey),
               title: Text('Education'),
-              onTap: () => Navigator.pop(context),
+              contentPadding: EdgeInsets.symmetric(horizontal: 10.0),
+              onTap: () {
+                Navigator.pop(context); // Close the drawer
+              },
             ),
             ListTile(
               leading: Icon(Icons.circle, size: 18, color: Colors.grey),
               title: Text('Skills'),
-              onTap: () => Navigator.pop(context),
+              contentPadding: EdgeInsets.symmetric(horizontal: 10.0),
+              onTap: () {
+                Navigator.pop(context); // Close the drawer
+              },
             ),
             ListTile(
               leading: Icon(Icons.circle, size: 18, color: Colors.grey),
               title: Text('Projects'),
-              onTap: () => Navigator.pop(context),
+              contentPadding: EdgeInsets.symmetric(horizontal: 10.0),
+              onTap: () {
+                Navigator.pop(context); // Close the drawer
+              },
             ),
             ListTile(
               leading: Icon(Icons.circle, size: 18, color: Colors.grey),
               title: Text('Experience'),
-              onTap: () => Navigator.pop(context),
+              contentPadding: EdgeInsets.symmetric(horizontal: 10.0),
+              onTap: () {
+                Navigator.pop(context); // Close the drawer
+              },
             ),
           ],
         ),
@@ -147,24 +228,17 @@ class _MyCVScreenState extends State<MyCVScreen> {
             Center(
               child: Column(
                 children: [
-                  GestureDetector(
-                    onTap: _pickImage,
-                    child: CircleAvatar(
-                      radius: 50,
-                      backgroundColor: Colors.blue[100],
-                      backgroundImage:
-                          _profileImage != null ? FileImage(_profileImage!) : null,
-                      child: _profileImage == null
-                          ? Text(
-                              "SIM",
-                              style: TextStyle(fontSize: 40, color: Colors.blue),
-                            )
-                          : null,
+                  CircleAvatar(
+                    radius: 50,
+                    backgroundColor: Colors.blue[100],
+                    child: Text(
+                      "SIM",
+                      style: TextStyle(fontSize: 40, color: Colors.blue),
                     ),
                   ),
                   SizedBox(height: 16),
                   Text(
-                    "Sean Iliad L. Martinez",
+                    "$userName",
                     style: TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
@@ -172,12 +246,12 @@ class _MyCVScreenState extends State<MyCVScreen> {
                   ),
                   SizedBox(height: 8),
                   Text(
-                    "+63 (956) 796-9038",
+                    "martinezseaniliad20@gmail.com",
                     style: TextStyle(fontSize: 16),
                   ),
-                  SizedBox(height: 4),
+                  SizedBox(height: 8),
                   Text(
-                    "20-07129@g.batstate-u.edu.ph",
+                    "(+63) 9672982181",
                     style: TextStyle(fontSize: 16),
                   ),
                 ],
